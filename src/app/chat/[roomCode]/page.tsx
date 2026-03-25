@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useSocket } from "@/components/providers/socket-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Copy, Send, LogOut, Loader2, User } from "lucide-react";
 import { toast } from "sonner";
@@ -63,10 +62,7 @@ export default function ChatRoom(props: { params: Promise<{ roomCode: string }> 
   useEffect(() => {
     // Scroll to bottom on new message
     if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -161,10 +157,10 @@ export default function ChatRoom(props: { params: Promise<{ roomCode: string }> 
         </header>
 
         {/* Chat Area */}
-        <ScrollArea className="flex-1 p-6" ref={scrollAreaRef}>
-          <div className="space-y-6 pb-4 flex flex-col">
+        <div className="flex-1 w-full overflow-y-auto p-4 sm:p-6" ref={scrollAreaRef}>
+          <div className="space-y-6 flex flex-col pt-4">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3 my-20">
+              <div className="flex flex-col items-center justify-center text-slate-500 space-y-3 my-20">
                 <div className="p-4 rounded-full bg-white/5 ring-1 ring-white/10">
                   <User className="w-8 h-8 opacity-50" />
                 </div>
@@ -174,19 +170,19 @@ export default function ChatRoom(props: { params: Promise<{ roomCode: string }> 
               messages.map((msg, i) => (
                 <div 
                   key={i} 
-                  className={`flex flex-col max-w-[80%] ${msg.isSelf ? 'self-end items-end' : 'self-start items-start'}`}
+                  className={`flex flex-col max-w-[85%] sm:max-w-[75%] ${msg.isSelf ? 'self-end items-end' : 'self-start items-start'}`}
                 >
                   <span className="text-xs text-slate-500 mb-1.5 px-1 font-medium tracking-wide">
                     {msg.isSelf ? "You" : msg.sender}
                   </span>
                   <div 
-                    className={`px-5 py-3 rounded-2xl ${
+                    className={`px-4 sm:px-5 py-3 rounded-2xl ${
                       msg.isSelf 
                         ? 'bg-indigo-600 text-white rounded-tr-sm shadow-[0_5px_15px_rgba(79,70,229,0.2)]' 
                         : 'bg-zinc-800 text-slate-200 rounded-tl-sm border border-white/5 shadow-lg'
                     }`}
                   >
-                    <p className="leading-relaxed text-[15px]">{msg.message}</p>
+                    <p className="leading-relaxed text-[15px] break-words whitespace-pre-wrap">{msg.message}</p>
                   </div>
                   <span className="text-[10px] text-slate-600 mt-1.5 px-1">
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -195,7 +191,7 @@ export default function ChatRoom(props: { params: Promise<{ roomCode: string }> 
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Input Area */}
         <div className="p-4 sm:p-6 bg-zinc-900/50 border-t border-white/10 backdrop-blur-md">
@@ -209,7 +205,6 @@ export default function ChatRoom(props: { params: Promise<{ roomCode: string }> 
             <Button 
               type="submit" 
               size="icon"
-              disabled={!inputValue.trim()}
               className="h-12 w-12 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] hover:shadow-[0_0_25px_rgba(79,70,229,0.6)] transition-all flex-shrink-0"
             >
               <Send className="w-5 h-5" />
