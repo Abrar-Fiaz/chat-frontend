@@ -1,65 +1,152 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSocket } from "@/components/providers/socket-provider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { MessageSquare, Users, Sparkles } from "lucide-react";
 
 export default function Home() {
+  const router = useRouter();
+  const { socket, isConnected } = useSocket();
+  const [joinCode, setJoinCode] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+
+  const handleCreateRoom = () => {
+    if (!socket || !isConnected) {
+      toast.error("Not connected to server");
+      return;
+    }
+    
+    setIsCreating(true);
+    socket.emit("createRoom", (response: { roomCode: string }) => {
+      setIsCreating(false);
+      if (response && response.roomCode) {
+        toast.success(`Room ${response.roomCode} created!`);
+        router.push(`/chat/${response.roomCode}`);
+      } else {
+        toast.error("Failed to create room.");
+      }
+    });
+  };
+
+  const handleJoinRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!socket || !isConnected) {
+      toast.error("Not connected to server");
+      return;
+    }
+
+    if (!joinCode || joinCode.length < 3) {
+      toast.error("Please enter a valid room code.");
+      return;
+    }
+
+    setIsJoining(true);
+    socket.emit("joinRoom", { roomCode: joinCode }, (response: { success: boolean, roomCode?: string, error?: string }) => {
+      setIsJoining(false);
+      if (response && response.success) {
+        toast.success("Joined room successfully!");
+        router.push(`/chat/${response.roomCode}`);
+      } else {
+        toast.error(response?.error || "Failed to join room.");
+      }
+    });
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-black text-slate-100 flex flex-col items-center justify-center p-4 selection:bg-indigo-500/30">
+      {/* Background decoration */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px]" />
+      </div>
+
+      <div className="z-10 w-full max-w-md space-y-8 relative">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center p-3 bg-white/5 rounded-2xl mb-4 shadow-xl ring-1 ring-white/10">
+            <MessageSquare className="w-8 h-8 text-indigo-400" />
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400">
+            Nexus Chat
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-slate-400">
+            Real-time, minimalistic, anywhere.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <Card className="bg-zinc-950/50 border-white/10 backdrop-blur-xl shadow-2xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-slate-200">Get Started</CardTitle>
+            <CardDescription className="text-slate-400">
+              Create a new room or join an existing one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Button
+              className="w-full h-12 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)]"
+              onClick={handleCreateRoom}
+              disabled={isCreating || !isConnected}
+            >
+              {isCreating ? (
+                <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Users className="mr-2 h-4 w-4" />
+              )}
+              Create New Room
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-zinc-950 px-2 text-slate-500 rounded text-[10px] tracking-wider">
+                  Or join with code
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleJoinRoom} className="space-y-3">
+              <div className="space-y-2">
+                <Input
+                  id="roomCode"
+                  placeholder="Enter 6-character code"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  maxLength={6}
+                  className="bg-black/40 border-white/10 h-12 text-center text-lg tracking-widest text-slate-200 placeholder:text-slate-600 focus-visible:ring-indigo-500/50 uppercase"
+                />
+              </div>
+              <Button
+                type="submit"
+                variant="outline"
+                className="w-full h-12 bg-white/5 border-white/10 hover:bg-white/10 text-slate-200 transition-colors"
+                disabled={isJoining || !joinCode || !isConnected}
+              >
+                Join Room
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="pt-2 text-center text-xs text-slate-500 flex justify-center">
+            {isConnected ? (
+              <span className="flex items-center text-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+                Connected to servers
+              </span>
+            ) : (
+              <span className="flex items-center text-rose-400">
+                <span className="w-2 h-2 rounded-full bg-rose-400 mr-2 shadow-[0_0_8px_rgba(251,113,133,0.8)]" />
+                Connecting...
+              </span>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    </main>
   );
 }
